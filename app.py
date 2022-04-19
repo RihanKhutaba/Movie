@@ -1,39 +1,68 @@
+import os
 import requests
-#key: '0cc913ce4bb1b776d2e5f84ad059c224'
-#step: wide configuration
 
-CONFIG_PATTERN = 'http://api.themoviedb.org/3/configuration?api_key=0cc913ce4bb1b776d2e5f84ad059c224'
+CONFIG_PATTERN = 'http://api.themoviedb.org/3/configuration?api_key={key}'
+IMG_PATTERN = 'http://api.themoviedb.org/3/movie/{imdbid}/images?api_key={key}'
 KEY = '0cc913ce4bb1b776d2e5f84ad059c224'
 
-url = CONFIG_PATTERN.format(key=KEY)
-r = requests.get(url)
-config = r.json()
-""" 
-content like this: 
-{'change_keys': ['adult',
-                  'also_known_as',
-                  ...,
-                  'translations'],
- 'images': {'backdrop_sizes': ['w300', 'w780', 'w1280', 'original'],
-             'base_url': 'http://d3gtl9l2a4fn1j.cloudfront.net/t/p/',
-             'logo_sizes': ['w45', 'w92', 'w154', 'w185', 'w300', 'w500', 'original'],
-             'poster_sizes': ['w92', 'w154', 'w185', 'w342', 'w500', 'original'],
-             'profile_sizes': ['w45', 'w185', 'h632', 'original'],
-             'secure_base_url': 'https://d3gtl9l2a4fn1j.cloudfront.net/t/p/'}}
-"""
 
-# base_url: this is where the images are stored.
-# poster_sizes: those are the available sizes.
-base_url = config['images']['base_url']
-sizes = config['images']['poster_sizes']
+def _get_json(url):
+    r = requests.get(url)
+    return r.json()
 
-"""
-    'sizes' should be sorted in ascending order, so
-        max_size = sizes[-1]
-    should get the largest size as well.        
-"""
-def size_str_to_int(x):
-    return float("inf") if x == 'original' else int(x[1:])
-max_size = max(sizes, key=size_str_to_int)
 
-print(config)
+def _download_images(urls, path='.'):
+    """download all images in list 'urls' to 'path' """
+
+    for nr, url in enumerate(urls):
+        r = requests.get(url)
+        filetype = r.headers['content-type'].split('/')[-1]
+        filename = 'poster_{0}.{1}'.format(nr + 1, filetype)
+        filepath = os.path.join(path, filename)
+        with open(filepath, 'wb') as w:
+            w.write(r.content)
+
+
+def get_poster_urls(imdbid):
+    """ return image urls of posters for IMDB id
+        returns all poster images from 'themoviedb.org'. Uses the
+        maximum available size.
+        Args:
+            imdbid (str): IMDB id of the movie
+        Returns:
+            list: list of urls to the images
+    """
+    config = _get_json(CONFIG_PATTERN.format(key=KEY))
+    base_url = config['images']['base_url']
+    sizes = config['images']['poster_sizes']
+
+    """
+        'sizes' should be sorted in ascending order, so
+            max_size = sizes[-1]
+        should get the largest size as well.        
+    """
+
+    def size_str_to_int(x):
+        return float("inf") if x == 'original' else int(x[1:])
+
+    max_size = max(sizes, key=size_str_to_int)
+
+    posters = _get_json(IMG_PATTERN.format(key=KEY, imdbid=imdbid))['posters']
+    poster_urls = []
+    for poster in posters:
+        rel_path = poster['file_path']
+        url = "{0}{1}{2}".format(base_url, max_size, rel_path)
+        poster_urls.append(url)
+
+    return poster_urls
+
+
+def tmdb_posters(imdbid, count=None, outpath='.'):
+    urls = get_poster_urls(imdbid)
+    if count is not None:
+        urls = urls[:count]
+    _download_images(urls, outpath)
+
+
+if __name__ == "__main__":
+    tmdb_posters('tt0095016')
