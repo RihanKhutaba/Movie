@@ -1,9 +1,12 @@
 import os
 import requests
+import urllib
+import imdb
 
 CONFIG_PATTERN = 'http://api.themoviedb.org/3/configuration?api_key={key}'
 IMG_PATTERN = 'http://api.themoviedb.org/3/movie/{imdbid}/images?api_key={key}'
 KEY = '0cc913ce4bb1b776d2e5f84ad059c224'
+title = input("please insert movie name:  ")
 
 
 def _get_json(url):
@@ -17,7 +20,7 @@ def _download_images(urls, path='.'):
     for nr, url in enumerate(urls):
         r = requests.get(url)
         filetype = r.headers['content-type'].split('/')[-1]
-        filename = 'poster_{0}.{1}'.format(nr + 1, filetype)
+        filename = title + '_' + 'poster_{0}.{1}'.format(nr + 1, filetype)
         filepath = os.path.join(path, filename)
         with open(filepath, 'wb') as w:
             w.write(r.content)
@@ -64,5 +67,19 @@ def tmdb_posters(imdbid, count=None, outpath='.'):
     _download_images(urls, outpath)
 
 
+def find_id(name_movie):
+    ia = imdb.IMDb()
+    search = ia.search_movie(name_movie)
+    s = search
+    open('info.txt', 'w').write(str(search))
+    text = open('info.txt', 'r')
+    idn = text.read()
+    id = "tt" + idn[11:18]
+    print(id)
+    return id
+
+
 if __name__ == "__main__":
-    tmdb_posters('tt0095016')
+    #tmdb_posters('tt0095016')
+    print(title)
+    tmdb_posters(find_id(title))
