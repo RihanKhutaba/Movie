@@ -1,11 +1,12 @@
 import os
 import requests
-import imdbs
+import imdb
 
 CONFIG_PATTERN = 'http://api.themoviedb.org/3/configuration?api_key=0cc913ce4bb1b776d2e5f84ad059c224'
 IMG_PATTERN = 'http://api.themoviedb.org/3/movie/{imdbid}/images?api_key=0cc913ce4bb1b776d2e5f84ad059c224'
 KEY = '0cc913ce4bb1b776d2e5f84ad059c224'
-title = input("please enter movie name: ")
+
+title = input("please enter the movie name")
 
 def _get_json(url):
     r = requests.get(url)
@@ -63,17 +64,21 @@ def tmdb_posters(imdbid, count=None, outpath='.'):
     if count is not None:
         urls = urls[:count]
     _download_images(urls, outpath)
-    def find_id(name_movie):
-        ia = imdb.IMDb()
-        search = ia.search_movie(name_movie)
-        s = search
-        open('info.txt', 'w').write(str(search))
-        text = open('info.txt', 'r')
-        idn = text.read()
-        id = "tt" + idn[11:18]
-        print(id)
-        return id
 
-    if __name__ == "__main__":
-        print(title)
-        tmdb_posters(find_id(title))
+
+
+def find_id(name_movie):
+    ia = imdb.IMDb()
+    search = ia.search_movie(name_movie)
+    s = search
+    open('info.txt', 'w').write(str(search))
+    text = open('info.txt', 'r')
+    idn = text.read()
+    id = "tt" + idn[11:18]
+    print(id)
+    return id
+
+
+if __name__ == "__main__":
+
+    tmdb_posters(find_id(title))
