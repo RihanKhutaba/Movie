@@ -87,7 +87,12 @@ def find_id(name_movie):
     idn = text.read()
     id = "tt" + idn[11:18]
     print(id)
-    return tmdb_posters(id)
+    try:
+        return tmdb_posters(id)
+    except Exception as e:
+        print (e)
+
+
 
 
  # if __name__ == "__main__":
