@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request , make_response
+from flask import render_template, request, make_response, Flask
 from pymongo import MongoClient, response
 from app import find_id
 import gridfs
-app = Flask(__name__)
 import imdb
+
+app = Flask(__name__)
 client = MongoClient('localhost', 27017)
 connection = MongoClient("localhost", 27017)
 db = client.DB_NAME
@@ -26,8 +27,8 @@ def handle_data():
     my_id = data['_id']
     fs = gridfs.GridFS(db)
     my_poster = fs.get(my_id).read()
-    response=make_response(my_poster)
-    response.content_type="image/webp"
+    response = make_response(my_poster)
+    response.content_type = "image/webp"
     return response
 
 @app.route("/")
