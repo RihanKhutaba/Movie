@@ -1,12 +1,19 @@
 import os
-import requests
+import gridfs
 import imdb
+import requests
+from pymongo import MongoClient
+
+
+connection = MongoClient("localhost", 27017)
+
+database = connection['DB_NAME']
 
 CONFIG_PATTERN = 'http://api.themoviedb.org/3/configuration?api_key=0cc913ce4bb1b776d2e5f84ad059c224'
 IMG_PATTERN = 'http://api.themoviedb.org/3/movie/{imdbid}/images?api_key=0cc913ce4bb1b776d2e5f84ad059c224'
 KEY = '0cc913ce4bb1b776d2e5f84ad059c224'
 
-title = input("please enter the movie name")
+# title = input("please enter the movie name")
 
 def _get_json(url):
     r = requests.get(url)
@@ -14,19 +21,22 @@ def _get_json(url):
 
 
 def _download_images(urls, path='.'):
-    """download all images in list 'urls' to 'path' """
 
-    for nr, url in enumerate(urls):
+    for nr, url in enumerate(urls[:5]):
         r = requests.get(url)
         filetype = r.headers['content-type'].split('/')[-1]
-        filename = title + 'poster_{0}.{1}'.format(nr + 1, filetype)
+        filename = 'title' + '_{0}.{1}'.format(nr + 1, filetype)
         filepath = os.path.join(path, filename)
         with open(filepath, 'wb') as w:
             w.write(r.content)
-
+        fs = gridfs.GridFS(database)
+        with open(filepath, 'rb') as f:
+          contents = f.read()
+        fs.put(contents, filename=filepath, name=id)
 
 def get_poster_urls(imdbid):
     """ return image urls of posters for IMDB id
+
         returns all poster images from 'themoviedb.org'. Uses the
         maximum available size.
         Args:
@@ -68,17 +78,18 @@ def tmdb_posters(imdbid, count=None, outpath='.'):
 
 
 def find_id(name_movie):
+    global id
     ia = imdb.IMDb()
     search = ia.search_movie(name_movie)
     s = search
-    open('info.txt', 'w').write(str(search))
-    text = open('info.txt', 'r')
+    open('../info.txt', 'w').write(str(search))
+    text = open('../info.txt', 'r')
     idn = text.read()
     id = "tt" + idn[11:18]
     print(id)
-    return id
+    return tmdb_posters(id)
 
 
-if __name__ == "__main__":
+ # if __name__ == "__main__":
 
-    tmdb_posters(find_id(title))
+   # tmdb_posters(find_id(title))
